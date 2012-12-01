@@ -81,6 +81,7 @@ int main (int argc, char** argv) {
         if(converges(grid1, rows, cols, conv, tiles) != 0) break;
 
         // Red Iteration
+        #pragma omp parallel for num_threads(NUMTHREADS)
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 if (grid1[i][j] == RED) {
@@ -98,6 +99,7 @@ int main (int argc, char** argv) {
         }
 
         // Blue Iteration
+        #pragma omp parallel for num_threads(NUMTHREADS)
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 if (grid1[i][j] == BLUE) {
