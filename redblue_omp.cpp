@@ -78,10 +78,8 @@ int main (int argc, char** argv) {
     gettimeofday(&start, NULL);
 
     while(true) {
-        cout<<"Converge\n";
         if(converges(grid1, rows, cols, conv, tiles) != 0) break;
 
-        cout<<"Red\n";
         // Red Iteration
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
@@ -99,7 +97,6 @@ int main (int argc, char** argv) {
             }
         }
 
-        cout<<"Blue\n";
         // Blue Iteration
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
