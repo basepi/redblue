@@ -17,6 +17,8 @@
 
 using namespace std;
 
+int converges (int** grid, int rows, int cols, double conv, int tiles);
+
 int main (int argc, char** argv) {
 
     int rows, cols;
@@ -68,4 +70,32 @@ int main (int argc, char** argv) {
     elapsedtime += (end.tv_usec - start.tv_usec) / 1000.0;
     cout<<"Time: "<<elapsedtime<<" ms."<<endl<<endl;
 
+}
+
+int converges (int** grid, int rows, int cols, double conv, int tiles) {
+    int rowpart = rows / tiles;
+    int colpart = cols / tiles;
+
+    int r;
+    int b;
+    int tilesize = rowpart * colpart
+
+    for (int ii = 0; ii < tiles; ii++) {
+        for (int jj = 0; jj < tiles; jj++) {
+            r = 0;
+            b = 0;
+            w = 0;
+            for (int i = rowpart * ii; i < rowpart * (ii + 1); i++) {
+                for (int j = colpart * jj; j < colpart * (jj + 1); j++) {
+                    if(grid[i][j] == 1) b++;
+                    else if(grid[i][j] == 2) r++;
+                }
+            }
+            if(((double)r)/tilesize >= conv) return 2; //Red converge
+            if(((double)b)/tilesize >= conv) return 1; //Blue converge
+        }
+    }
+
+    // Didn't converge
+    return 0;
 }
