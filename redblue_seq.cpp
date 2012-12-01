@@ -31,6 +31,7 @@ int main (int argc, char** argv) {
     int** grid2;
     timeval start, end;
     double elapsedtime;
+    int itercount = 0;
 
     if(argc < 5) {
         cout<<"Usage:  redblue_omp <rows> <cols> <filename> <converge_val> <converge_tiles>"<<endl;
@@ -74,10 +75,8 @@ int main (int argc, char** argv) {
     gettimeofday(&start, NULL);
 
     while(true) {
-        cout<<"Converge\n";
         if(converges(grid1, rows, cols, conv, tiles) != 0) break;
 
-        cout<<"Red\n";
         // Red Iteration
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
@@ -95,7 +94,6 @@ int main (int argc, char** argv) {
             }
         }
 
-        cout<<"Blue\n";
         // Blue Iteration
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
@@ -115,6 +113,8 @@ int main (int argc, char** argv) {
         for (int i = 0; i < rows; i++) {
             memcpy(grid1[i], grid2[i], sizeof(int)*cols);
         }
+
+        itercount++;
     }
 
 
@@ -125,6 +125,7 @@ int main (int argc, char** argv) {
     elapsedtime = (end.tv_sec - start.tv_sec) * 1000.0;
     elapsedtime += (end.tv_usec - start.tv_usec) / 1000.0;
     cout<<"Time: "<<elapsedtime<<" ms."<<endl<<endl;
+    cout<<"Iterations: "<<itercount<<endl;
 
     for (int i = 0; i < rows; i++) {
         delete [] grid1[i];
