@@ -7,6 +7,8 @@
  */
 
 #include <iostream>
+#include <fstream>
+#include <sys/time.h>
 #include <cmath>
 #include <algorithm>
 #include <stdio.h>
@@ -14,6 +16,10 @@
 #include "omp.h"
 
 #define NUMTHREADS 8
+
+#define BLUE 1
+#define RED 2
+#define WHITE 0
 
 using namespace std;
 
@@ -39,11 +45,16 @@ int main (int argc, char** argv) {
     conv = atof(argv[4]);
     tiles = atof(argv[5]);
 
-    grid1 = new int[rows][cols];
-    grid2 = new int[rows][cols];
+    grid1 = new int*[rows];
+    grid2 = new int*[rows];
+
+    for(int i = 0; i < cols; i++) {
+        grid1[i] = new int[cols];
+        grid2[i] = new int[cols];
+    }
 
     ifstream gridfile(argv[3]);
-    if(!(grifile.is_open())) {
+    if(!(gridfile.is_open())) {
         cout<<"Error:  file not found"<<endl;
         return 0;
     }
@@ -56,10 +67,58 @@ int main (int argc, char** argv) {
 
     gridfile.close();
 
+    for (int i = 0; i < rows; i++) {
+        memcpy(grid2[i], grid1[i], sizeof(int)*cols);
+    }
+
 
     /* Actual computation */
 
     gettimeofday(&start, NULL);
+
+    while(true) {
+        cout<<"Converge\n";
+        if(converges(grid1, rows, cols, conv, tiles) != 0) break;
+
+        cout<<"Red\n";
+        // Red Iteration
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (grid1[i][j] == RED) {
+                    //Edge case
+                    if (j == cols-1 && grid1[i][0] == WHITE) {
+                        grid2[i][j] = WHITE;
+                        grid2[i][0] = RED;
+                    }
+                    else if (j != cols-1 && grid1[i][j+1] == WHITE) {
+                        grid2[i][j] = WHITE;
+                        grid2[i][j+1] = RED;
+                    }
+                }
+            }
+        }
+
+        cout<<"Blue\n";
+        // Blue Iteration
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (grid1[i][j] == BLUE) {
+                    if (i == rows-1 && grid1[0][j] == WHITE) {
+                        grid2[i][j] = WHITE;
+                        grid2[0][j] = BLUE;
+                    }
+                    else if (i != rows-1 && grid1[i+1][j] == WHITE ) {
+                        grid2[i][j] = WHITE;
+                        grid2[i+1][j] = BLUE;
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < rows; i++) {
+            memcpy(grid1[i], grid2[i], sizeof(int)*cols);
+        }
+    }
 
 
     gettimeofday(&end, NULL);
@@ -70,6 +129,12 @@ int main (int argc, char** argv) {
     elapsedtime += (end.tv_usec - start.tv_usec) / 1000.0;
     cout<<"Time: "<<elapsedtime<<" ms."<<endl<<endl;
 
+    for (int i = 0; i < rows; i++) {
+        delete [] grid1[i];
+        delete [] grid2[i];
+    }
+    delete [] grid1;
+    delete [] grid2;
 }
 
 int converges (int** grid, int rows, int cols, double conv, int tiles) {
@@ -78,21 +143,20 @@ int converges (int** grid, int rows, int cols, double conv, int tiles) {
 
     int r;
     int b;
-    int tilesize = rowpart * colpart
+    int tilesize = rowpart * colpart;
 
     for (int ii = 0; ii < tiles; ii++) {
         for (int jj = 0; jj < tiles; jj++) {
             r = 0;
             b = 0;
-            w = 0;
             for (int i = rowpart * ii; i < rowpart * (ii + 1); i++) {
                 for (int j = colpart * jj; j < colpart * (jj + 1); j++) {
-                    if(grid[i][j] == 1) b++;
-                    else if(grid[i][j] == 2) r++;
+                    if(grid[i][j] == BLUE) b++;
+                    else if(grid[i][j] == RED) r++;
                 }
             }
-            if(((double)r)/tilesize >= conv) return 2; //Red converge
-            if(((double)b)/tilesize >= conv) return 1; //Blue converge
+            if(((double)r)/tilesize >= conv) return RED; //Red converge
+            if(((double)b)/tilesize >= conv) return BLUE; //Blue converge
         }
     }
 
