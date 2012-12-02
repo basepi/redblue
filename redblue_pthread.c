@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
-#include "omp.h"
 #include "pthread.h"
 
 #define NUMTHREADS 8
@@ -84,6 +83,7 @@ void* run(void* t) {
     new_grid = WHITE;
     int min;
     int max;
+    int converge_percent;
     pthread_barrier_t *barrier;
 
     while(!finished) {
@@ -128,10 +128,22 @@ void* run(void* t) {
         // Barrier
         pthread_barrier_wait(barrier)
 
-        // Check for convergence
-        if(convergence()) {
-            finished = true;
+        // Check for convergence (if this tile contains more then x% one
+        // color or another)
+        double bluecount = 0;
+        double redcount = 0;
+        for(int i=min; i<max; i++) {
+            for(int j=min; j<max; j++) {
+                if(grid[i][j] == BLUE)
+                    bluecount++;
+                else if(grid[i][j] == RED)
+                    redcount++;
+            }
         }
+        if((redcount / total) >= converge_percent)
+            finished = true;
+        else if((bluecount / total) >= converge_percent)
+            finished = true;
 
         // swap out pointers for grids, and whiteout your section of the newgrid
         grid = newgrid;
