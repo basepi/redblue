@@ -86,8 +86,27 @@ void* run(void* t) {
     int converge_percent;
     pthread_barrier_t *barrier;
 
-    while(!finished) {
+    // Initially check for convergence
+    double bluecount = 0;
+    double redcount = 0;
+    for(int i=min; i<max; i++) {
+        for(int j=min; j<max; j++) {
+            if(grid[i][j] == BLUE)
+                bluecount++;
+            else if(grid[i][j] == RED)
+                redcount++;
+        }
+    }
+    if((redcount / total) >= converge_percent)
+        finished = true;
+    else if((bluecount / total) >= converge_percent)
+        finished = true;
 
+    // Barrier to insure that if any tile converges, all threads stop
+    pthread_barrier_wait(barrier);
+
+    // Run until one section converges
+    while(!finished) {
         // Iterate red 1 step
         for(int i=min; i<max; i++) {
             for(int j=min; j<max; j++) {
@@ -128,6 +147,19 @@ void* run(void* t) {
         // Barrier
         pthread_barrier_wait(barrier)
 
+        // Set grid to newgrid, and reset this tile of newgrid to white.
+        // To save time on memcopies, just swap the pointers for grid and
+        // newgrid. Because each thread will do this in the same section
+        // (guarenteed by the barriers) this shouldn't cause any problems
+        int** tmp = grid;
+        grid = newgrid;
+        newgrid = tmp;
+        for(int i=min; i<max; i++) {
+            for(int j=min; j<max; j++) {
+                newgrid[i][j] = WHITE;
+            }
+        }
+
         // Check for convergence (if this tile contains more then x% one
         // color or another)
         double bluecount = 0;
@@ -145,9 +177,6 @@ void* run(void* t) {
         else if((bluecount / total) >= converge_percent)
             finished = true;
 
-        // swap out pointers for grids, and whiteout your section of the newgrid
-        grid = newgrid;
-        newgrid = WHITE;
 
         // Barrier
         pthread_barrier_wait(barrier);
