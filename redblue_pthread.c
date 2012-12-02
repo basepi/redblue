@@ -65,8 +65,9 @@ int main (int argc, char** argv) {
 
     gettimeofday(&start, NULL);
 
-    for(i=0; i<numThreads; i++) {
-            if(pthread_create(&threads[i], NULL, &run, (void*) &s[i])) {|
+    for(i=0; i<numOfTiles; i++) {
+            pthread_create(&threads[i], NULL, &run, (void*) &s[i]);
+    }
 
     gettimeofday(&end, NULL);
 
@@ -76,6 +77,72 @@ int main (int argc, char** argv) {
     elapsedtime += (end.tv_usec - start.tv_usec) / 1000.0;
     cout<<"Time: "<<elapsedtime<<" ms."<<endl<<endl;
 }
+
+// Convergence
+// initially bread up threads
+void* run(void* t) {
+    new_grid = WHITE;
+    int min;
+    int max;
+    pthread_barrier_t *barrier;
+
+    while(!finished) {
+
+        // Iterate red 1 step
+        for(int i=min; i<max; i++) {
+            for(int j=min; j<max; j++) {
+                if(grid[i][j] == RED)  {
+                    // deal with wrapping
+                    int rightpos = j+1;
+                    if(rightpos >= size)
+                        rightpos = 0;
+
+                    if(grid[i][rightpos] == WHITE)
+                        new_grid[i][rightpos] = RED;
+                    else
+                        new_grid[i][j] = RED;
+                }
+            }
+        }
+
+        // Barrier
+        pthread_barrier_wait(barrier);
+
+        // Iterate blue 1 step
+        for(int i=min; i<max; i++) {
+            for(int j=min; j<max; j++) {
+                if(grid[i][j] == BLUE)  {
+                    // deal with wrapping
+                    int botpos = i+1;
+                    if(botpos >= size)
+                        botpos = 0;
+
+                    if(new_grid[botpos][j] == WHITE && grid[botpos][j] != BLUE)
+                        new_grid[botpos][j] = BLUE;
+                    else
+                        new_grid[i][j] = BLUE;
+                }
+            }
+        }
+
+        // Barrier
+        pthread_barrier_wait(barrier)
+
+        // Check for convergence
+        if(convergence()) {
+            finished = true;
+        }
+
+        // swap out pointers for grids, and whiteout your section of the newgrid
+        grid = newgrid;
+        newgrid = WHITE;
+
+        // Barrier
+        pthread_barrier_wait(barrier);
+    }
+}
+
+
 
 void* run(void* t) {
     copy_grid; // copy of the original grid that we can modify
