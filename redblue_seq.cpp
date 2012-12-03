@@ -67,9 +67,10 @@ int main (int argc, char** argv) {
     gridfile.close();
 
     for (int i = 0; i < rows; i++) {
-        memcpy(grid2[i], grid1[i], sizeof(int)*cols);
+        for (int j = 0; j < cols; j++) {
+            grid2[i][j] = WHITE;
+        }
     }
-
 
     /* Actual computation */
 
@@ -78,18 +79,20 @@ int main (int argc, char** argv) {
     while(true) {
         if(converges(grid1, rows, cols, conv, tiles) != 0) break;
 
+        int rightpos, botpos;
+
         // Red Iteration
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 if (grid1[i][j] == RED) {
-                    //Edge case
-                    if (j == cols-1 && grid1[i][0] == WHITE) {
-                        grid2[i][j] = WHITE;
-                        grid2[i][0] = RED;
+                    rightpos = j+1;
+                    if(rightpos >= rows) rightpos = 0;
+
+                    if (grid1[i][rightpos] == WHITE) {
+                        grid2[i][rightpos] = RED;
                     }
-                    else if (j != cols-1 && grid1[i][j+1] == WHITE) {
-                        grid2[i][j] = WHITE;
-                        grid2[i][j+1] = RED;
+                    else {
+                        grid2[i][j] = RED;
                     }
                 }
             }
@@ -99,20 +102,27 @@ int main (int argc, char** argv) {
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 if (grid1[i][j] == BLUE) {
-                    if (i == rows-1 && grid2[0][j] == WHITE && grid1[0][j] != BLUE) {
-                        grid2[i][j] = WHITE;
-                        grid2[0][j] = BLUE;
+                    botpos = i + 1;
+                    if(botpos >= cols) botpos = 0;
+
+                    if (grid2[botpos][j] == WHITE && grid1[botpos][j] != BLUE) {
+                        grid2[botpos][j] = BLUE;
                     }
-                    else if (i != rows-1 && grid2[i+1][j] == WHITE && grid1[i+1][j] != BLUE) {
-                        grid2[i][j] = WHITE;
-                        grid2[i+1][j] = BLUE;
+                    else {
+                        grid2[i][j] = BLUE;
                     }
                 }
             }
         }
 
+        int** temp = grid1;
+        grid1 = grid2;
+        grid2 = temp;
+
         for (int i = 0; i < rows; i++) {
-            memcpy(grid1[i], grid2[i], sizeof(int)*cols);
+            for (int j = 0; j < cols; j++) {
+                grid2[i][j] = WHITE;
+            }
         }
 
         itercount++;
