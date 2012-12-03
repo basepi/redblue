@@ -406,20 +406,27 @@ public class RedBlueVisualization {
     }
 
     private static boolean thresholdReached() {
-        int count = 0;
+        int red = 0;
+        int blue = 0;
         for (int i = 0; i < gridSize; i += tileSize) {
             for (int j = 0; j < gridSize; j += tileSize) {
                 for (int ii = i; ii < i + tileSize && ii < gridSize; ii++) {
                     for (int jj = j; jj < j + tileSize && jj < gridSize; jj++) {
-                        if (grid.grid[ii][jj] != 0) {
-                            count++;
+                        if (grid.grid[ii][jj] == 1) {
+                            red++;
+                        } else if (grid.grid[ii][jj] == 2) {
+                            blue++;
                         }
                     }
                 }
-                if ((double) count / (double) (tileSize * tileSize) > threshold) {
+                if ((double) red / (double) (tileSize * tileSize) >= threshold) {
                     return true;
                 }
-                count = 0;
+                if ((double) blue / (double) (tileSize * tileSize) >= threshold) {
+                    return true;
+                }
+                red = 0;
+                blue = 0;
             }
         }
         return false;
