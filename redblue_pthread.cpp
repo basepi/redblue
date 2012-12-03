@@ -63,6 +63,8 @@ void* run(void* tile) {
                 redcount++;
         }
     }
+    //printf("%f\n", (double)redcount / tile_size);
+    //printf("%f\n", (double)bluecount / tile_size);
     if(((double)redcount / tile_size) >= converge_percent)
         *finished = true;
     else if(((double)bluecount / tile_size) >= converge_percent)
@@ -73,7 +75,6 @@ void* run(void* tile) {
 
     // Run until one section converges
     while(!*finished) {
-        printf("%d\n", iterations);
         // Iterate red 1 step
         for(int i=startx; i<endx; i++) {
             for(int j=starty; j<endy; j++) {
@@ -129,8 +130,8 @@ void* run(void* tile) {
 
         // Check for convergence (if this tile contains more then x% one
         // color or another)
-        double bluecount = 0;
-        double redcount = 0;
+        bluecount = 0;
+        redcount = 0;
         for(int i=startx; i<endx; i++) {
             for(int j=starty; j<endy; j++) {
                 if(grid[i][j] == BLUE)
@@ -139,6 +140,8 @@ void* run(void* tile) {
                     redcount++;
             }
         }
+        //printf("%f\n", (double)redcount / tile_size);
+        //printf("%f\n", (double)bluecount / tile_size);
         if(((double)redcount / tile_size) >= converge_percent)
             *finished = true;
         else if(((double)bluecount / tile_size) >= converge_percent)
@@ -148,6 +151,8 @@ void* run(void* tile) {
         if(pthread_barrier_wait(barrier) != 0)
             iterations++;
     }
+
+    return NULL;
 }
 
 int main (int argc, char** argv) {
@@ -199,10 +204,13 @@ int main (int argc, char** argv) {
 
     bool finished = false;
     pthread_barrier_t barrier;
-    if(pthread_barrier_init(&barrier, NULL, tiles*2) != 0)
+    // TODO - verify number of barriers
+    int num_of_tiles = (rows/tiles) * (rows/tiles);
+    printf("%d\n", num_of_tiles);
+    if(pthread_barrier_init(&barrier, NULL, num_of_tiles) != 0)
         printf("error creating barrier\n");
-    pthread_t threads[tiles*2];
-    tile_info t[tiles*2];
+    pthread_t threads[num_of_tiles];
+    tile_info t[num_of_tiles];
 
     // Create sturcts for each thread
     int count = 0;
@@ -228,11 +236,11 @@ int main (int argc, char** argv) {
         }
     }
 
-    for(int i=0; i<tiles*2; i++) {
+    for(int i=0; i<num_of_tiles; i++) {
         pthread_create(&threads[i], NULL, &run, (void*) &t[i]);
     }
 
-    for(int i=0; i<tiles*2; i++) {
+    for(int i=0; i<num_of_tiles; i++) {
         pthread_join(threads[i], NULL);
     }
 
