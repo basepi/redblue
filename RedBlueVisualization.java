@@ -54,17 +54,23 @@ public class RedBlueVisualization {
             }
         }
 
-        @Override
-        public String toString() {
-            String returnValue = "";
-            for (int i = 0; i < gridSize; i++) {
-                String line = "";
-                for (int j = 0; j < gridSize; j++) {
-                    line += grid[i][j] + " ";
+        public void toFile(String fileName) {
+            try {
+                FileWriter file = new FileWriter(fileName);
+                BufferedWriter bw = new BufferedWriter(file);
+                for (int i = 0; i < gridSize; i++) {
+                    for (int j = 0; j < gridSize; j++) {
+                        if (j < gridSize - 1) {
+                            bw.write(convert(Integer.toString(grid[i][j])) + " ");
+                        } else {
+                            bw.write(convert(Integer.toString(grid[i][j])) + "\n");
+                        }
+                    }
                 }
-                returnValue += line.trim() + "\n";
+                bw.close();
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
             }
-            return returnValue;
         }
 
         public void next() {
@@ -142,6 +148,7 @@ public class RedBlueVisualization {
         c = new GridBagConstraints();
         c.gridx = 1;
         jb.addActionListener(new ActionListener() {
+
             @Override
             public void actionPerformed(ActionEvent e) {
                 new Thread(new beginAnimation()).start();
@@ -153,6 +160,7 @@ public class RedBlueVisualization {
         c = new GridBagConstraints();
         c.gridx = 2;
         jb.addActionListener(new ActionListener() {
+
             @Override
             public void actionPerformed(ActionEvent e) {
                 looping = 0;
@@ -165,6 +173,7 @@ public class RedBlueVisualization {
         c.gridx = 3;
         c.insets = new Insets(0, 30, 0, 0);
         jb.addActionListener(new ActionListener() {
+
             @Override
             public void actionPerformed(ActionEvent e) {
                 grid.next();
@@ -188,6 +197,7 @@ public class RedBlueVisualization {
         c.weightx = 1;
         c.anchor = GridBagConstraints.LINE_END;
         jb.addActionListener(new ActionListener() {
+
             @Override
             public void actionPerformed(ActionEvent e) {
                 options.setVisible(!options.isVisible());
@@ -265,6 +275,7 @@ public class RedBlueVisualization {
 
         jb = new JButton("Set");
         jb.addActionListener(new ActionListener() {
+
             @Override
             public void actionPerformed(ActionEvent e) {
                 gridSize = Integer.parseInt(((JTextField) options.getComponent(1)).getText());
@@ -291,16 +302,13 @@ public class RedBlueVisualization {
 
         jb = new JButton("Save");
         jb.addActionListener(new ActionListener() {
+
             @Override
             public void actionPerformed(ActionEvent ae) {
-                try {
-                    FileWriter file = new FileWriter("grid" + gridSize + "x" + gridSize + ".txt");
-                    BufferedWriter bw = new BufferedWriter(file);
-                    bw.write(convert(grid.toString()));
-                    bw.close();
-                } catch (Exception e) {
-                    System.out.println("Error: " + e.getMessage());
-                }
+                gridSize = Integer.parseInt(((JTextField) options.getComponent(1)).getText());
+                density = Double.parseDouble(((JTextField) options.getComponent(5)).getText());
+                grid = new Grid(gridSize, density);
+                grid.toFile("grid" + gridSize + "x" + gridSize + ".txt");
             }
         });
         c = new GridBagConstraints();
@@ -309,6 +317,7 @@ public class RedBlueVisualization {
 
         jb = new JButton("Load");
         jb.addActionListener(new ActionListener() {
+
             @Override
             public void actionPerformed(ActionEvent ae) {
                 try {
@@ -373,9 +382,9 @@ public class RedBlueVisualization {
 
     private static void incItr() {
         System.out.println();
-        int itr = Integer.parseInt(((JLabel)buttons.getComponent(3)).getText().substring(5));
+        int itr = Integer.parseInt(((JLabel) buttons.getComponent(3)).getText().substring(5));
         itr++;
-        ((JLabel)buttons.getComponent(3)).setText("Itr: " + itr);
+        ((JLabel) buttons.getComponent(3)).setText("Itr: " + itr);
     }
 
     private static void updateTiles() {
