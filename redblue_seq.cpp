@@ -108,11 +108,11 @@ int main (int argc, char** argv) {
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 if (grid1[i][j] == BLUE) {
-                    if (i == rows-1 && grid1[0][j] == WHITE) {
+                    if (i == rows-1 && grid2[0][j] == WHITE && grid1[0][j] != BLUE) {
                         grid2[i][j] = WHITE;
                         grid2[0][j] = BLUE;
                     }
-                    else if (i != rows-1 && grid1[i+1][j] == WHITE) {
+                    else if (i != rows-1 && grid2[i+1][j] == WHITE && grid1[i+1][j] != BLUE) {
                         grid2[i][j] = WHITE;
                         grid2[i+1][j] = BLUE;
                     }
