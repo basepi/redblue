@@ -233,7 +233,6 @@ int main (int argc, char** argv) {
     pthread_barrier_t barrier;
     // TODO - verify number of barriers
     int num_of_tiles = (rows/tiles) * (rows/tiles);
-    printf("%d\n", num_of_tiles);
     if(pthread_barrier_init(&barrier, NULL, num_of_tiles) != 0)
         printf("error creating barrier\n");
     pthread_t threads[num_of_tiles];
