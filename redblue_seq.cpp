@@ -75,15 +75,6 @@ int main (int argc, char** argv) {
 
     gettimeofday(&start, NULL);
 
-    for(int i=0; i<rows; i++) {
-        for(int j=0; j<rows; j++) {
-            printf("%d ", grid1[i][j]);
-        }
-        printf("\n");
-    }
-    printf("\n\n");
-
-
     while(true) {
         if(converges(grid1, rows, cols, conv, tiles) != 0) break;
 
@@ -123,14 +114,6 @@ int main (int argc, char** argv) {
         for (int i = 0; i < rows; i++) {
             memcpy(grid1[i], grid2[i], sizeof(int)*cols);
         }
-
-        for(int i=0; i<rows; i++) {
-            for(int j=0; j<rows; j++) {
-                printf("%d ", grid1[i][j]);
-            }
-            printf("\n");
-        }
-        printf("\n\n");
 
         itercount++;
     }
