@@ -70,6 +70,16 @@ void* run(void* tile) {
     else if(((double)bluecount / tile_size) >= converge_percent)
         *finished = true;
 
+    if(pthread_barrier_wait(barrier)) {
+        for(int i=0; i<rows; i++) {
+            for(int j=0; j<rows; j++) {
+                printf("%d ", grid[i][j]);
+            }
+            printf("\n");
+        }
+        printf("\n\n");
+    }
+
     // Barrier to insure that if any tile converges, all threads stop
     pthread_barrier_wait(barrier);
 
@@ -113,6 +123,16 @@ void* run(void* tile) {
         }
 
         // Barrier
+        if(pthread_barrier_wait(barrier)) {
+            for(int i=0; i<rows; i++) {
+                for(int j=0; j<rows; j++) {
+                    printf("%d ", newgrid[i][j]);
+                }
+                printf("\n");
+            }
+            printf("\n\n");
+        }
+
         pthread_barrier_wait(barrier);
 
         // Set grid to newgrid, and reset this tile of newgrid to white.
