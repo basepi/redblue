@@ -48,6 +48,8 @@ int main (int argc, char** argv) {
 
     if(argc > 6) NUMTHREADS = atoi(argv[6]);
 
+    cout<<"NUMTHREADS: "<<NUMTHREADS<<endl;
+
     grid1 = new int*[rows];
     grid2 = new int*[rows];
 
