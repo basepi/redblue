@@ -184,6 +184,13 @@ int main (int argc, char** argv) {
         grid2[i] = new int[cols];
     }
 
+    // zero init grid2
+    for(int i=0; i<rows; i++) {
+        for(int j=0; j<rows; j++) {
+            grid2[i][j] = WHITE;
+        }
+    }
+
     // Init grid based on file
     ifstream gridfile(argv[3]);
     if(!(gridfile.is_open())) {
