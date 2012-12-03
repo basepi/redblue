@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define BLUE 1
 #define RED 2
