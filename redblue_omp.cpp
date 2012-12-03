@@ -16,8 +16,6 @@
 #include <string.h>
 #include "omp.h"
 
-#define NUMTHREADS 8
-
 #define BLUE 1
 #define RED 2
 #define WHITE 0
@@ -27,6 +25,7 @@ using namespace std;
 int converges (int** grid, int rows, int cols, double conv, int tiles);
 
 int main (int argc, char** argv) {
+    int NUMTHREADS = 8;
 
     int rows, cols;
     double conv;
@@ -37,7 +36,7 @@ int main (int argc, char** argv) {
     double elapsedtime;
     int itercount = 0;
 
-    if(argc < 5) {
+    if(argc < 6) {
         cout<<"Usage:  redblue_omp <rows> <cols> <filename> <converge_val> <converge_tiles>"<<endl;
         return 0;
     }
@@ -46,6 +45,8 @@ int main (int argc, char** argv) {
     cols = atoi(argv[2]);
     conv = atof(argv[4]);
     tiles = atof(argv[5]);
+
+    if(argc > 6) NUMTHREADS = atoi(argv[6]);
 
     grid1 = new int*[rows];
     grid2 = new int*[rows];
