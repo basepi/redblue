@@ -8,6 +8,6 @@ pthread:
 	g++ redblue_pthread.cpp -lpthread -O3 -o pthread -Wall
 	
 clean:
-	rm seq -f
-	rm omp -f
-	rm pthread -f
+	rm -f seq
+	rm -f omp
+	rm -f pthread
