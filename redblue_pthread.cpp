@@ -228,16 +228,16 @@ int main (int argc, char** argv) {
 
     bool finished = false;
     pthread_barrier_t barrier;
-    //int num_of_tiles = tiles * tiles;
-    int num_of_tiles = 8;
-    if(pthread_barrier_init(&barrier, NULL, num_of_tiles) != 0)
+    //int num_of_threads = tiles * tiles;
+    int num_of_threads = 8;
+    if(pthread_barrier_init(&barrier, NULL, num_of_threads) != 0)
         printf("error creating barrier\n");
-    pthread_t threads[num_of_tiles];
-    tile_info t[num_of_tiles];
+    pthread_t threads[num_of_threads];
+    tile_info t[num_of_threads];
 
     // Create sturcts for each thread
     int count = 0;
-    int tile_partation = (rows/num_of_tiles);
+    int tile_partation = (rows/num_of_threads);
     for(int i=0; i<rows; i+=tile_partation) {
         for(int j=0; j<rows; j+=tile_partation) {
             // Tile positions
@@ -261,11 +261,11 @@ int main (int argc, char** argv) {
         }
     }
 
-    for(int i=0; i<num_of_tiles; i++) {
+    for(int i=0; i<num_of_threads; i++) {
         pthread_create(&threads[i], NULL, &run, (void*) &t[i]);
     }
 
-    for(int i=0; i<num_of_tiles; i++) {
+    for(int i=0; i<num_of_threads; i++) {
         pthread_join(threads[i], NULL);
     }
 
