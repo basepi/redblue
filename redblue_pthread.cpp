@@ -29,6 +29,7 @@ typedef struct {
     int starty;           // start y position of a tile
     int endy;             // end y position of a tile
     double converge_percent; // convergence percent
+    int tiles;          // tiles passed in from comand line
     int tile_size;     // total size of a tile
     int rows;             // number of rows
     int** grid;           // original grid, shared between threads
@@ -47,26 +48,38 @@ void* run(void* tile) {
     int endx = t->endx;
     int starty = t->starty;
     int endy = t->endy;
+    int tiles = t->tiles;
     int** grid = t->grid;
     int** newgrid = t->newgrid;
     pthread_barrier_t *barrier = t->barrier;
     bool *finished = t->finished;
 
-    // Initially check for convergence
-    int bluecount = 0;
-    int redcount = 0;
-    for(int i=startx; i<endx; i++) {
-        for(int j=starty; j<endy; j++) {
-            if(grid[i][j] == BLUE)
-                bluecount++;
-            else if(grid[i][j] == RED)
-                redcount++;
+    // Barrier - have one thread check for convergence :(
+    if(pthread_barrier_wait(barrier)) {
+        int rowpart = rows / tiles;
+        int colpart = rows / tiles;
+
+        int r;
+        int b;
+        int tilesize = rowpart * colpart;
+
+        for (int ii = 0; ii < tiles; ii++) {
+            for (int jj = 0; jj < tiles; jj++) {
+                r = 0;
+                b = 0;
+                for (int i = rowpart * ii; i < rowpart * (ii + 1); i++) {
+                    for (int j = colpart * jj; j < colpart * (jj + 1); j++) {
+                        if(grid[i][j] == BLUE) b++;
+                        else if(grid[i][j] == RED) r++;
+                    }
+                }
+                if(((double)r)/tile_size >= converge_precent)
+                    *finished = true;
+                else if(((double)b)/tile_size >= converge_precent)
+                    *finished = true;
+            }
         }
     }
-    if(((double)redcount / tile_size) >= converge_percent)
-        *finished = true;
-    else if(((double)bluecount / tile_size) >= converge_percent)
-        *finished = true;
 
     // Barrier to insure that if any tile converges, all threads stop
     pthread_barrier_wait(barrier);
@@ -110,8 +123,32 @@ void* run(void* tile) {
             }
         }
 
-        // Barrier
-        pthread_barrier_wait(barrier);
+        // Barrier - have one thread check for convergence :(
+        if(pthread_barrier_wait(barrier)) {
+            int rowpart = rows / tiles;
+            int colpart = rows / tiles;
+
+            int r;
+            int b;
+            int tilesize = rowpart * colpart;
+
+            for (int ii = 0; ii < tiles; ii++) {
+                for (int jj = 0; jj < tiles; jj++) {
+                    r = 0;
+                    b = 0;
+                    for (int i = rowpart * ii; i < rowpart * (ii + 1); i++) {
+                        for (int j = colpart * jj; j < colpart * (jj + 1); j++) {
+                            if(grid[i][j] == BLUE) b++;
+                            else if(grid[i][j] == RED) r++;
+                        }
+                    }
+                    if(((double)r)/tile_size >= converge_precent)
+                        *finished = true;
+                    else if(((double)b)/tile_size >= converge_precent)
+                        *finished = true;
+                }
+            }
+        }
 
         // Set grid to newgrid, and reset this tile of newgrid to white.
         // To save time on memcopies, just swap the pointers for grid and
@@ -126,22 +163,6 @@ void* run(void* tile) {
             }
         }
 
-        // Check for convergence (if this tile contains more then x% one
-        // color or another)
-        int bluecount = 0;
-        int redcount = 0;
-        for(int i=startx; i<endx; i++) {
-            for(int j=starty; j<endy; j++) {
-                if(grid[i][j] == BLUE)
-                    bluecount++;
-                else if(grid[i][j] == RED)
-                    redcount++;
-            }
-        }
-        if(((double)redcount / tile_size) >= converge_percent)
-            *finished = true;
-        else if(((double)bluecount / tile_size) >= converge_percent)
-            *finished = true;
 
         // Barrier
         if(pthread_barrier_wait(barrier) != 0)
@@ -207,8 +228,8 @@ int main (int argc, char** argv) {
 
     bool finished = false;
     pthread_barrier_t barrier;
-    // TODO - verify number of barriers
-    int num_of_tiles = tiles * tiles;
+    //int num_of_tiles = tiles * tiles;
+    int num_of_tiles = 8;
     if(pthread_barrier_init(&barrier, NULL, num_of_tiles) != 0)
         printf("error creating barrier\n");
     pthread_t threads[num_of_tiles];
@@ -216,7 +237,7 @@ int main (int argc, char** argv) {
 
     // Create sturcts for each thread
     int count = 0;
-    int tile_partation = (rows/tiles);
+    int tile_partation = (rows/num_of_tiles);
     for(int i=0; i<rows; i+=tile_partation) {
         for(int j=0; j<rows; j+=tile_partation) {
             // Tile positions
@@ -233,6 +254,7 @@ int main (int argc, char** argv) {
             t[count].newgrid = grid2;
             t[count].barrier = &barrier;
             t[count].finished = &finished;
+            t[count].tiles = tiles;
 
             // Update position counter. Probably a better math way to do this but meh.
             count++;
