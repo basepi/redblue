@@ -150,6 +150,8 @@ void* run(void* tile) {
             }
         }
 
+        pthread_barrier_wait(barrier);
+
         // Set grid to newgrid, and reset this tile of newgrid to white.
         // To save time on memcopies, just swap the pointers for grid and
         // newgrid. Because each thread will do this in the same section
@@ -237,29 +239,29 @@ int main (int argc, char** argv) {
 
     // Create sturcts for each thread
     int count = 0;
-    int tile_partation = (rows/num_of_threads);
+    int tile_partation = rows/num_of_threads;
     for(int i=0; i<rows; i+=tile_partation) {
-        for(int j=0; j<rows; j+=tile_partation) {
-            // Tile positions
-            t[count].startx = i;
-            t[count].endx = i + tile_partation;
-            t[count].starty = j;
-            t[count].endy = j + tile_partation;
+        // Tile positions
+        t[count].startx = i;
+        t[count].endx = i + tile_partation;
+        t[count].starty = 0;
+        t[count].endy = rows;
 
-            // All other info needed for running thread
-            t[count].converge_percent = conv;
-            t[count].tile_size = (rows/tiles) * (rows/tiles);
-            t[count].rows = rows;
-            t[count].grid = grid1;
-            t[count].newgrid = grid2;
-            t[count].barrier = &barrier;
-            t[count].finished = &finished;
-            t[count].tiles = tiles;
+        // All other info needed for running thread
+        t[count].converge_percent = conv;
+        t[count].tile_size = (rows/tiles) * (rows/tiles);
+        t[count].rows = rows;
+        t[count].grid = grid1;
+        t[count].newgrid = grid2;
+        t[count].barrier = &barrier;
+        t[count].finished = &finished;
+        t[count].tiles = tiles;
 
-            // Update position counter. Probably a better math way to do this but meh.
-            count++;
-        }
+        // Update position counter. Probably a better math way to do this but meh.
+        count++;
     }
+
+    if(count != num_of_threads) printf("error\n");
 
     for(int i=0; i<num_of_threads; i++) {
         pthread_create(&threads[i], NULL, &run, (void*) &t[i]);
