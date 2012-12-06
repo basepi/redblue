@@ -3,7 +3,7 @@
  * Kyle Rich
  * Landon Gilbert-Bland
  *
- * Red Blue Computation with OMP parallelism
+ * Red Blue Computation with pthreads parallelism
  */
 
 #include <iostream>
@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <iterator>
 
 #define BLUE 1
 #define RED 2
@@ -24,30 +25,32 @@ using namespace std;
 
 int** grid1;
 int** grid2;
+int rows, cols, itercount, tiles;
+double conv;
+int converged = 0;
+pthread_barrier_t barrier;
 
-int converges(int** grid, int rows, int cols, double conv, int tiles);
+//int converges(int** grid, int rows, int cols, double conv, int tiles);
+void* converges(void* arg);
 int threadBoundary(int threads);
 void* iterateGrid(void* arg);
 
 struct thread_info {
     pthread_t thread_id;
-    int color;
-    int il;
-    int iu;
-    int jl;
-    int ju;
-    int bound;
+    int tNum;
+    int il; //i-loop lower bound
+    int iu; //i-loop upper bound
+    int jl; //j-loop lower bound
+    int ju; //j-loop upper bound
 };
 
 int main(int argc, char** argv) {
     int NUMTHREADS = 8;
-    int rows, cols;
-    double conv;
-    int tiles;
+    itercount = 0;
+    converged = 0;
 
     timeval start, end;
     double elapsedtime;
-    int itercount = 0;
 
     if (argc < 6) {
         cout << "Usage:  redblue_pthread <rows> <cols> <filename> <converge_val> <converge_tiles> [<num_threads>]" << endl;
@@ -60,13 +63,11 @@ int main(int argc, char** argv) {
     tiles = atoi(argv[5]);
 
     if (argc > 6) NUMTHREADS = atoi(argv[6]);
-
-
     cout << "NUMTHREADS: " << NUMTHREADS << endl;
+    pthread_barrier_init(&barrier, NULL, NUMTHREADS);
 
     grid1 = new int*[rows];
     grid2 = new int*[rows];
-
     for (int i = 0; i < cols; i++) {
         grid1[i] = new int[cols];
         grid2[i] = new int[cols];
@@ -98,16 +99,13 @@ int main(int argc, char** argv) {
 
     int jDim = threadBoundary(NUMTHREADS);
     int iDim = NUMTHREADS / jDim;
-    cout << "iDim: " << iDim << ", jDim: " << jDim << endl;
-
-    /* Actual computation */
-
-    gettimeofday(&start, NULL);
+    //    cout << "iDim: " << iDim << ", jDim: " << jDim << endl;
 
     int tNum;
     for (int i = 0; i < iDim; i++) {
         for (int j = 0; j < jDim; j++) {
             tNum = i * jDim + j;
+            tinfo[tNum].tNum = tNum;
             tinfo[tNum].il = (int) ((float) rows / (float) iDim * i);
             tinfo[tNum].iu = (int) ((float) rows / (float) iDim * ((float) i + 1));
             tinfo[tNum].jl = (int) ((float) rows / (float) jDim * (float) j);
@@ -115,48 +113,21 @@ int main(int argc, char** argv) {
         }
     }
 
-    while (!converges(grid1, rows, cols, conv, tiles)) {
-        for (int i = 0; i < iDim; i++) {
-            for (int j = 0; j < jDim; j++) {
-                tNum = i * jDim + j;
-                tinfo[tNum].color = RED;
-                tinfo[tNum].bound = rows;
-                pthread_create(&tinfo[tNum].thread_id, NULL, iterateGrid, &tinfo[tNum]);
-            }
+    /* Actual computation */
+    gettimeofday(&start, NULL);
+
+    for (int i = 0; i < iDim; i++) {
+        for (int j = 0; j < jDim; j++) {
+            tNum = i * jDim + j;
+            pthread_create(&tinfo[tNum].thread_id, NULL, iterateGrid, &tinfo[tNum]);
         }
+    }
 
-        for (int i = 0; i < NUMTHREADS; i++) {
-            pthread_join(tinfo[i].thread_id, NULL);
-        }
-
-        for (int i = 0; i < iDim; i++) {
-            for (int j = 0; j < jDim; j++) {
-                tNum = i * jDim + j;
-                tinfo[tNum].color = BLUE;
-                tinfo[tNum].bound = cols;
-                pthread_create(&tinfo[tNum].thread_id, NULL, iterateGrid, &tinfo[tNum]);
-            }
-        }
-
-        for (int i = 0; i < NUMTHREADS; i++) {
-            pthread_join(tinfo[i].thread_id, NULL);
-        }
-
-        int** temp = grid1;
-        grid1 = grid2;
-        grid2 = temp;
-
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                grid2[i][j] = WHITE;
-            }
-        }
-
-        itercount++;
+    for (int i = 0; i < NUMTHREADS; i++) {
+        pthread_join(tinfo[i].thread_id, NULL);
     }
 
     gettimeofday(&end, NULL);
-
     /* End of computation */
 
     elapsedtime = (end.tv_sec - start.tv_sec) * 1000.0;
@@ -173,14 +144,19 @@ int main(int argc, char** argv) {
 }
 
 void* iterateGrid(void* arg) {
-    struct thread_info *tinfo = (struct thread_info *) arg;
+    struct thread_info* tinfo = (struct thread_info *) arg;
     int position = 0;
-    for (int i = tinfo->il; i < tinfo->iu; i++) {
-        for (int j = tinfo->jl; j < tinfo->ju; j++) {
-            if (tinfo->color == RED) {
+    pthread_t t;
+    while (!converged) {
+        if (tinfo->tNum == 0) {
+            pthread_create(&t, NULL, converges, NULL);
+        }
+
+        for (int i = tinfo->il; i < tinfo->iu; i++) {
+            for (int j = tinfo->jl; j < tinfo->ju; j++) {
                 if (grid1[i][j] == RED) {
                     position = j + 1;
-                    if (position >= tinfo->bound)
+                    if (position >= rows)
                         position = 0;
                     if (grid1[i][position] == WHITE) {
                         grid2[i][position] = RED;
@@ -188,10 +164,16 @@ void* iterateGrid(void* arg) {
                         grid2[i][j] = RED;
                     }
                 }
-            } else if (tinfo->color == BLUE) {
+            }
+        }
+
+        pthread_barrier_wait(&barrier);
+
+        for (int i = tinfo->il; i < tinfo->iu; i++) {
+            for (int j = tinfo->jl; j < tinfo->ju; j++) {
                 if (grid1[i][j] == BLUE) {
                     position = i + 1;
-                    if (position >= tinfo->bound)
+                    if (position >= cols)
                         position = 0;
                     if (grid2[position][j] == WHITE && grid1[position][j] != BLUE) {
                         grid2[position][j] = BLUE;
@@ -201,11 +183,33 @@ void* iterateGrid(void* arg) {
                 }
             }
         }
+
+        pthread_barrier_wait(&barrier);
+
+        if (tinfo->tNum == 0) {
+            pthread_join(t, NULL);
+
+            int** temp = grid1;
+            grid1 = grid2;
+            grid2 = temp;
+
+            if (!converged) itercount++;
+        }
+
+        pthread_barrier_wait(&barrier);
+
+        for (int i = tinfo->il; i < tinfo->iu; i++) {
+            for (int j = tinfo->jl; j < tinfo->ju; j++) {
+                grid2[i][j] = WHITE;
+            }
+        }
+
+        pthread_barrier_wait(&barrier);
     }
     return 0;
 }
 
-int converges(int** grid, int rows, int cols, double conv, int tiles) {
+void* converges(void* arg) {
     int rowpart = rows / tiles;
     int colpart = cols / tiles;
 
@@ -219,12 +223,12 @@ int converges(int** grid, int rows, int cols, double conv, int tiles) {
             b = 0;
             for (int i = rowpart * ii; i < rowpart * (ii + 1); i++) {
                 for (int j = colpart * jj; j < colpart * (jj + 1); j++) {
-                    if (grid[i][j] == BLUE) b++;
-                    else if (grid[i][j] == RED) r++;
+                    if (grid1[i][j] == BLUE) b++;
+                    else if (grid1[i][j] == RED) r++;
                 }
             }
-            if (((double) r) / tilesize >= conv) return RED; //Red converge
-            if (((double) b) / tilesize >= conv) return BLUE; //Blue converge
+            if (((double) r) / tilesize >= conv) converged = RED; //Red converge
+            if (((double) b) / tilesize >= conv) converged = BLUE; //Blue converge
         }
     }
 
