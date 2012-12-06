@@ -73,9 +73,9 @@ void* run(void* tile) {
                         else if(grid[i][j] == RED) r++;
                     }
                 }
-                if(((double)r)/tile_size >= converge_precent)
+                if(((double)r)/tile_size >= converge_percent)
                     *finished = true;
-                else if(((double)b)/tile_size >= converge_precent)
+                else if(((double)b)/tile_size >= converge_percent)
                     *finished = true;
             }
         }
@@ -142,9 +142,9 @@ void* run(void* tile) {
                             else if(grid[i][j] == RED) r++;
                         }
                     }
-                    if(((double)r)/tile_size >= converge_precent)
+                    if(((double)r)/tile_size >= converge_percent)
                         *finished = true;
-                    else if(((double)b)/tile_size >= converge_precent)
+                    else if(((double)b)/tile_size >= converge_percent)
                         *finished = true;
                 }
             }
