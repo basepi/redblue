@@ -112,10 +112,10 @@ public class RedBlueVisualization {
     private static JPanel options;
     private static JPanel saveLoad;
     private static int looping = 0;
-    private static int gridSize = 32;
+    private static int gridSize = 64;
     private static int tileSize = 16;
-    private static double density = 0.25;
-    private static double threshold = 0.5;
+    private static double density = 0.4;
+    private static double threshold = 0.4;
     private static double fps = 20;
     private static Grid grid;
 
